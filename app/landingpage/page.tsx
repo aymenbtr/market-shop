@@ -80,7 +80,7 @@ const useAdmin = () => {
     setIsAdmin(adminToken === ADMIN_CREDENTIALS.token);
     
     // Check for special key combination or condition
-    const checkAdminAccess = (e) => {
+    const checkAdminAccess = (e: React.KeyboardEvent) => {
       // Show admin button only when Ctrl + Shift + A is pressed
       if (e.ctrlKey && e.shiftKey && e.altKey && e.key === 'A') {
         setShowAdminButton(true);
