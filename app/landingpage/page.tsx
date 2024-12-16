@@ -1,45 +1,65 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { ShoppingCart, X, Plus, Image as ImageIcon, ChevronLeft, ChevronRight, Expand, Star, ArrowDown, LogIn, LogOut } from 'lucide-react';
-const ImageGallery = ({ images, fullscreen = false }) => {
+interface ImageGalleryProps {
+  images: string[];
+  fullscreen?: boolean; // Optional prop to toggle fullscreen mode
+}
+
+const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // Move to the next image
   const nextImage = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+    setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
   };
 
+  // Move to the previous image
   const prevImage = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    setCurrentIndex((prevIndex) => (prevIndex - 1 + images.length) % images.length);
+  };
+
+  // Set the current image index manually
+  const goToImage = (index: number) => {
+    setCurrentIndex(index);
   };
 
   return (
-    <div className={`relative ${fullscreen ? 'h-96' : 'h-48'}`}>
-      <img 
-        src={images[currentIndex]} 
-        alt="Product" 
+    <div className={`relative ${fullscreen ? "h-96" : "h-48"}`}>
+      {/* Display the current image */}
+      <img
+        src={images[currentIndex]}
+        alt={`Image ${currentIndex + 1}`}
         className="w-full h-full object-cover"
       />
+
+      {/* Navigation buttons */}
       {images.length > 1 && (
         <>
-          <button 
+          {/* Previous Image Button */}
+          <button
             onClick={prevImage}
             className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <button 
+
+          {/* Next Image Button */}
+          <button
             onClick={nextImage}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
+
+          {/* Dots Indicator */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-2">
             {images.map((_, idx) => (
               <button
                 key={idx}
-                onClick={() => setCurrentIndex(idx)}
+                onClick={() => goToImage(idx)}
                 className={`w-2 h-2 rounded-full ${
-                  currentIndex === idx ? 'bg-white' : 'bg-white bg-opacity-50'
+                  currentIndex === idx ? "bg-white" : "bg-white bg-opacity-50"
                 }`}
               />
             ))}
@@ -49,6 +69,7 @@ const ImageGallery = ({ images, fullscreen = false }) => {
     </div>
   );
 };
+
 const useAdmin = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [showAdminButton, setShowAdminButton] = useState(false);
