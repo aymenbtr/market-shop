@@ -161,10 +161,17 @@ return (
 
 
 const ProductPreview = ({ product, onClose, onBuy }) => {
+  const formatPrice = (price) => {
+    return price.toLocaleString('fr-DZ') + ' DA';
+  };
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
     <div className="bg-white rounded-lg max-w-4xl w-full my-8">
       <div className="sticky top-0 bg-white z-10 p-4 border-b flex justify-between items-center">
+      <div className="text-3xl font-bold text-green-600 mb-6">
+        {formatPrice(product.price)}
+      </div>
+      {/* ... (rest of the component remains the same) */}
           <h2 className="text-2xl font-bold">{product.name}</h2>
           <button 
             onClick={onClose}
@@ -190,7 +197,7 @@ const ProductPreview = ({ product, onClose, onBuy }) => {
                 <span className="text-gray-600">(4.8/5 rating)</span>
               </div>
               <div className="text-3xl font-bold text-green-600 mb-6">
-                ${product.price.toFixed(2)}
+                DA{product.price.toFixed(2)}
               </div>
             </div>
             
@@ -274,14 +281,14 @@ const LandingPage = () => {
       {
         id: 1,
         name: "Premium Headphones",
-        price: 99.99,
+        price: 14999.99, // Price in DZD
         description: "High-quality wireless headphones with noise cancellation. Experience crystal-clear audio with deep bass and comfortable ear cups for extended listening sessions.",
         images: ["/api/placeholder/300/300", "/api/placeholder/300/300"]
       },
       {
         id: 2,
         name: "Smartwatch",
-        price: 199.99,
+        price: 29999.99, // Price in DZD
         description: "Feature-rich smartwatch with health tracking. Monitor your fitness goals, receive notifications, and track your sleep patterns with this elegant and durable smartwatch.",
         images: ["/api/placeholder/300/300", "/api/placeholder/300/300"]
       }
@@ -348,6 +355,9 @@ const LandingPage = () => {
         alert('Please upload only image files');
       }
     });
+  };
+  const formatPrice = (price) => {
+    return price.toLocaleString('fr-DZ') + ' DA';
   };
   const removeImage = (index) => {
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
@@ -500,7 +510,7 @@ const LandingPage = () => {
           <p className="text-gray-600 mt-2">Choose from our selection of premium products</p>
         </div>
       </header>
-  
+
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {products.map(product => (
@@ -527,7 +537,7 @@ const LandingPage = () => {
                 <p className="text-gray-600 mb-4 line-clamp-2">{product.description}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-2xl font-bold text-green-600">
-                    ${product.price.toFixed(2)}
+                    {formatPrice(product.price)}
                   </span>
                   <button
                     onClick={() => handleBuyClick(product)}
@@ -542,9 +552,9 @@ const LandingPage = () => {
           ))}
         </div>
       </main>
-  
+
       <ScrollPrompt />
-  
+
       {previewProduct && (
         <ProductPreview 
           product={previewProduct} 
@@ -552,7 +562,7 @@ const LandingPage = () => {
           onBuy={handleBuyClick}
         />
       )}
-  
+
       {showAddProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-md w-full my-8 p-6">
@@ -587,7 +597,7 @@ const LandingPage = () => {
                     required
                   />
                 </div>
-  
+
                 <div>
                   <label className="block text-gray-700 mb-2">Price</label>
                   <input
@@ -601,7 +611,7 @@ const LandingPage = () => {
                     required
                   />
                 </div>
-  
+
                 <div>
                   <label className="block text-gray-700 mb-2">Description</label>
                   <textarea
@@ -612,7 +622,7 @@ const LandingPage = () => {
                     required
                   />
                 </div>
-  
+
                 <div>
                   <label className="block text-gray-700 mb-2">Product Images</label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-4">
@@ -680,7 +690,7 @@ const LandingPage = () => {
           </div>
         </div>
       )}
-  
+
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 overflow-y-auto">
           <div className="bg-white rounded-lg max-w-md w-full my-8 p-6" ref={formRef}>
@@ -693,7 +703,7 @@ const LandingPage = () => {
                 <X className="w-6 h-6" />
               </button>
             </div>
-  
+
             <div className="mb-6">
               <h3 className="font-semibold mb-2">Selected Product:</h3>
               <div className="flex items-center">
@@ -704,11 +714,11 @@ const LandingPage = () => {
                 />
                 <div>
                   <p className="font-semibold">{selectedProduct?.name}</p>
-                  <p className="text-green-600 font-bold">${selectedProduct?.price.toFixed(2)}</p>
+                  <p className="text-green-600 font-bold">{formatPrice(selectedProduct?.price)}</p>
                 </div>
               </div>
             </div>
-  
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-gray-700 mb-2">Full Name</label>
@@ -721,7 +731,7 @@ const LandingPage = () => {
                   required
                 />
               </div>
-  
+
               <div>
                 <label className="block text-gray-700 mb-2">Email</label>
                 <input
@@ -733,7 +743,7 @@ const LandingPage = () => {
                   required
                 />
               </div>
-  
+
               <div>
                 <label className="block text-gray-700 mb-2">Shipping Address</label>
                 <textarea
@@ -744,7 +754,7 @@ const LandingPage = () => {
                   required
                 />
               </div>
-  
+
               <div>
                 <label className="block text-gray-700 mb-2">Phone Number</label>
                 <input
@@ -756,7 +766,7 @@ const LandingPage = () => {
                   required
                 />
               </div>
-  
+
               <button
                 type="submit"
                 className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
@@ -767,7 +777,7 @@ const LandingPage = () => {
           </div>
         </div>
       )}
-  
+
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-sm w-full transform transition-all scale-95 animate-[scale-100_0.2s_ease-in]">
@@ -790,7 +800,7 @@ const LandingPage = () => {
           </div>
         </div>
       )}
-  
+
       {showSuccessMessage && (
         <div className="fixed bottom-8 right-8 max-w-sm w-full bg-white rounded-lg shadow-lg p-6 transform transition-all animate-[slideIn_0.3s_ease-out]">
           <div className="flex items-center">
@@ -813,15 +823,15 @@ const LandingPage = () => {
           </div>
         </div>
       )}
-  
+
       {showLoginModal && (
         <AdminLogin onClose={() => setShowLoginModal(false)} />
       )}
     </div>
   );
- }
- export default LandingPage;
+}
 
+export default LandingPage;
 
 
 
