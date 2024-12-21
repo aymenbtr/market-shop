@@ -1,6 +1,6 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+import express from 'express';
+import mongoose from 'mongoose';
+import cors from 'cors';
 
 const app = express();
 
@@ -23,18 +23,20 @@ const orderSchema = new mongoose.Schema({
     name: String,
     email: String,
     address: String,
-    phone: String
+    phone: String,
   },
   orderDetails: {
-    items: [{
-      productName: String,
-      price: Number,
-      id: Number
-    }],
-    totalAmount: Number
+    items: [
+      {
+        productName: String,
+        price: Number,
+        id: Number,
+      },
+    ],
+    totalAmount: Number,
   },
   orderDate: Date,
-  status: String
+  status: String,
 });
 
 // Explicitly use 'client' as the collection name
