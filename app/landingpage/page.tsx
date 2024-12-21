@@ -1,6 +1,7 @@
 "use client";
-import React, { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, X, Plus, Image as ImageIcon, ChevronLeft, ChevronRight, Expand, Star, ArrowDown, LogIn, LogOut } from 'lucide-react';
+import React, { useState, useEffect,} from 'react';
+import Image from 'next/image';
+import { ShoppingCart, X, Plus, Image as ImageIcon, ChevronLeft, ChevronRight, Star, LogOut } from 'lucide-react';
 
 // Environment variables with fallbacks
 const ADMIN_CREDENTIALS = {
@@ -229,7 +230,7 @@ class ErrorBoundary extends React.Component<
 const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
-  
+
   // Use an array of default images if no images are provided
   const defaultImage = 'https://via.placeholder.com/400x300?text=Default+Image';
   const displayImages = images?.length > 0 ? images : [defaultImage];
@@ -237,7 +238,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false 
   const nextImage = () => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % displayImages.length);
   };
-  
+
   const generatePlaceholder = (index: number) => {
     return `https://via.placeholder.com/400x300?text=Product+Image+${index + 1}`;
   };
@@ -257,17 +258,19 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false 
 
   return (
     <div className={`relative ${fullscreen ? "h-96" : "h-48"}`}>
-      <img
+      <Image
         src={imageError ? generatePlaceholder(currentIndex) : displayImages[currentIndex]}
         alt={`Product image ${currentIndex + 1}`}
         className="w-full h-full object-cover rounded-t-lg"
         onError={handleImageError}
+        layout="fill" // Use the fill layout for full-size images
+        objectFit="cover" // Ensure the image covers the container
       />
       {displayImages.length > 1 && (
         <>
           <button
             onClick={() => {
-              setCurrentIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length);
+              prevImage();
               setImageError(false);
             }}
             className="absolute left-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75"
@@ -276,7 +279,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false 
           </button>
           <button
             onClick={() => {
-              setCurrentIndex((prev) => (prev + 1) % displayImages.length);
+              nextImage();
               setImageError(false);
             }}
             className="absolute right-2 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white p-1 rounded-full hover:bg-opacity-75"
@@ -288,7 +291,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false 
               <button
                 key={idx}
                 onClick={() => {
-                  setCurrentIndex(idx);
+                  goToImage(idx);
                   setImageError(false);
                 }}
                 className={`w-2 h-2 rounded-full ${
@@ -302,7 +305,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false 
     </div>
   );
 };
-
 // Admin Login Component
 const AdminLogin = ({ onClose }: { onClose: () => void }) => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -690,10 +692,15 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
                       className="flex items-center justify-between p-4 border border-gray-100 rounded-xl hover:border-green-200 transition-colors duration-200"
                     >
                       <div className="flex items-center space-x-4">
-                        <img
-                          src={item.images[0]}
-                          alt={item.name}
-                          className="w-20 h-20 object-cover rounded-lg"
+                      <Image
+                        src={item.images[0] || `https://via.placeholder.com/400x300?text=${encodeURIComponent(item.name)}`}
+                        alt={item.name}
+                        width={80}
+                        height={80}
+                        className='object-cover'
+                        onError={() =>{
+                          console.log("Image Failed to load:", item.images[0] );
+                        }}
                         />
                         <div>
                           <h3 className="font-semibold text-lg text-gray-800">{item.name}</h3>
