@@ -200,6 +200,8 @@ class ErrorBoundary extends React.Component<
     this.state = { hasError: false };
   }
 
+  // Disable ESLint rule for unused variable
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static getDerivedStateFromError(_: Error) {
     return { hasError: true };
   }
@@ -225,6 +227,7 @@ class ErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
+
 
 // Image Gallery Component
 const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false }) => {

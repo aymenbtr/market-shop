@@ -200,6 +200,8 @@ class ErrorBoundary extends React.Component<
     this.state = { hasError: false };
   }
 
+  // Disable ESLint rule for unused variable
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   static getDerivedStateFromError(_: Error) {
     return { hasError: true };
   }
@@ -225,6 +227,7 @@ class ErrorBoundary extends React.Component<
     return this.props.children;
   }
 }
+
 
 // Image Gallery Component
 const ImageGallery: React.FC<ImageGalleryProps> = ({ images, fullscreen = false }) => {
@@ -563,25 +566,27 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
 
   return (
     <ErrorBoundary>
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Enhanced Header */}
-      <header className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <ShoppingCart className="w-8 h-8 text-green-600" />
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
-                Marketplace
-              </h1>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-green-50">
+        {/* Enhanced Header with Glass Effect */}
+        <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 border-b border-gray-100 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="bg-green-100 p-2 rounded-lg">
+                  <ShoppingCart className="w-8 h-8 text-green-600" />
+                </div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-green-400 bg-clip-text text-transparent">
+                  DZ-Market
+                </h1>
               </div>
               <div className="flex items-center space-x-6">
                 <button
                   onClick={() => setShowCart(true)}
-                  className="relative p-2 text-gray-600 hover:text-gray-900 transition-colors duration-200"
+                  className="relative group p-3 hover:bg-green-50 rounded-full transition-all duration-300"
                 >
-                  <ShoppingCart className="w-6 h-6" />
+                  <ShoppingCart className="w-6 h-6 text-gray-600 group-hover:text-green-600" />
                   {cartItems.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs animate-pulse">
+                    <span className="absolute -top-1 -right-1 bg-green-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs animate-bounce">
                       {cartItems.length}
                     </span>
                   )}
@@ -590,14 +595,14 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
                   <div className="flex items-center space-x-4">
                     <button
                       onClick={() => setShowAddModal(true)}
-                      className="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2 rounded-full hover:from-green-700 hover:to-green-600 transition-all duration-200 shadow-md hover:shadow-lg flex items-center space-x-2"
+                      className="bg-gradient-to-r from-green-600 to-green-500 text-white px-6 py-2.5 rounded-full hover:from-green-700 hover:to-green-600 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center space-x-2"
                     >
-                    <Plus className="w-5 h-5" />
+                      <Plus className="w-5 h-5" />
                       <span>Add Product</span>
                     </button>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors duration-200"
+                      className="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors duration-300 px-4 py-2 rounded-full hover:bg-red-50"
                     >
                       <LogOut className="w-5 h-5" />
                       <span>Logout</span>
@@ -613,30 +618,39 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
             {products.map((product) => (
               <div
                 key={product.id}
-                className="group bg-white rounded-2xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-gray-100"
               >
-                <div className="relative">
+                <div className="relative overflow-hidden rounded-t-2xl">
                   <ImageGallery images={product.images} />
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <button
+                    onClick={() => setSelectedProduct(product)}
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-white text-green-600 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-4 group-hover:translate-y-0 shadow-lg hover:bg-green-50"
+                  >
+                    View Details
+                  </button>
                 </div>
                 <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2 text-gray-800">{product.name}</h3>
-                  <p className="text-2xl font-bold text-green-600 mb-4">
-                    {product.price.toLocaleString('fr-DZ')} DA
-                  </p>
+                  <h3 className="text-xl font-semibold mb-2 text-gray-800 line-clamp-2">{product.name}</h3>
+                  <div className="flex items-center space-x-2 mb-4">
+                    <div className="flex items-center">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star key={star} className="w-4 h-4 text-yellow-400 fill-current" />
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-500">(5.0)</span>
+                  </div>
                   <div className="flex justify-between items-center">
-                    <button
-                      onClick={() => setSelectedProduct(product)}
-                      className="px-4 py-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors duration-200"
-                    >
-                      View Details
-                    </button>
+                    <p className="text-2xl font-bold text-green-600">
+                      {product.price.toLocaleString('fr-DZ')} DA
+                    </p>
                     {isAdmin && (
                       <button
                         onClick={() => setShowDeleteModal(product.id)}
-                        className="text-red-500 hover:text-red-700 transition-colors duration-200"
+                        className="text-red-500 hover:text-red-700 transition-colors duration-200 p-2 hover:bg-red-50 rounded-full"
                       >
                         Delete
+                      <X className="w-5 h-5" />
                       </button>
                     )}
                   </div>
@@ -645,8 +659,28 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
             ))}
           </div>
         </main>
-
-        {/* Modals */}
+          {/* Empty State with Enhanced Design */}
+          {products.length === 0 && (
+            <div className="text-center py-24">
+              <div className="bg-green-50 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
+                <ImageIcon className="w-12 h-12 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-3">No Products Available</h3>
+              <p className="text-gray-600 max-w-md mx-auto">
+                Start by adding some amazing products to your marketplace.
+              </p>
+              {isAdmin && (
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="mt-8 px-8 py-3 bg-green-600 text-white rounded-full hover:bg-green-700 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                >
+                  Add Your First Product
+                </button>
+              )}
+            </div>
+          )}
+         {/* Modals */}
+        {/* Re-use your existing modal components with the enhanced styling */}
         {showAddModal && <AddProductModal onClose={() => setShowAddModal(false)} />}
         {showLoginModal && <AdminLogin onClose={() => setShowLoginModal(false)} />}
         {showDeleteModal !== null && (
@@ -714,8 +748,8 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
                         <X className="w-5 h-5" />
                       </button>
                     </div>
-                  ))}
-                   <div className="border-t border-gray-200 pt-4 mt-6">
+                     ))}
+                     <div className="border-t border-gray-200 pt-4 mt-6">
                     <div className="flex justify-between items-center text-lg font-bold">
                       <span>Total:</span>
                       <span className="text-green-600">
@@ -784,8 +818,8 @@ const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
                     </form>
                   </div>
                 </div>
-              ) : (
-                <div className="text-center py-12">
+                 ) : (
+                 <div className="text-center py-12">
                 <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <p className="text-xl text-gray-600">Your cart is empty</p>
                 <button
