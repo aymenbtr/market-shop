@@ -1,8 +1,15 @@
 import React from 'react'
+import Marketplace from './landingpage/page'
 
 const Page = () => {
   return (
-    <div>Page</div>
+     <>
+     <title>
+      Dz-Market
+     </title>
+      <Marketplace/>
+     </>
+    
   )
 }
 
