@@ -74,26 +74,40 @@ const AddProductModal = ({ onClose }: { onClose: () => void }) => {
     description: '',
     images: [] as string[]
   });
+  const [, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    const newProduct = {
-      id: Date.now(),
-      name: productData.name,
-      price: parseFloat(productData.price),
-      description: productData.description,
-      images:
-        productData.images.length > 0
-          ? productData.images
-          : [`https://via.placeholder.com/400x300?text=${encodeURIComponent(productData.name)}`],
-    };
+    try {
+      const response = await fetch(`${API_URL}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+        },
+        body: JSON.stringify({
+          name: productData.name,
+          price: parseFloat(productData.price),
+          description: productData.description,
+          images: productData.images.length > 0
+            ? productData.images
+            : [`https://via.placeholder.com/400x300?text=${encodeURIComponent(productData.name)}`]
+        })
+      });
 
-    const existingProducts = JSON.parse(localStorage.getItem('marketplaceProducts') || '[]');
-    const updatedProducts = [...existingProducts, newProduct];
+      if (!response.ok) {
+        throw new Error('Failed to add product');
+      }
 
-    localStorage.setItem('marketplaceProducts', JSON.stringify(updatedProducts));
-    window.location.reload();
+      window.location.reload();
+    } catch (error) {
+      console.error('Error adding product:', error);
+      alert('Failed to add product. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -472,6 +486,8 @@ return (
 // Main Marketplace Component
 const Marketplace = () => {
 const [products, setProducts] = useState<Product[]>([]);
+const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 const [showAddModal, setShowAddModal] = useState(false);
 const [showLoginModal, setShowLoginModal] = useState(false);
@@ -489,27 +505,88 @@ phone: ''
 const [isSubmitting, setIsSubmitting] = useState(false);
 
 useEffect(() => {
-const handleKeyDown = (e: KeyboardEvent) => {
- if (e.ctrlKey && e.altKey && e.shiftKey && e.key.toLowerCase() === 'a') {
-   setShowLoginModal(true);
- }
-};
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-window.addEventListener('keydown', handleKeyDown);
+      // First try to fetch from the API
+      const response = await fetch(`${API_URL}/products`);
 
-// Check admin status
-const adminToken = localStorage.getItem('adminToken');
-setIsAdmin(adminToken === ADMIN_CREDENTIALS.token);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-// Load products from localStorage
-const storedProducts = localStorage.getItem('marketplaceProducts');
-if (storedProducts) {
- setProducts(JSON.parse(storedProducts));
+      const data = await response.json();
+      setProducts(data.products || []);
+
+    } catch (error) {
+      console.error('Error fetching products:', error);
+
+      // Provide more specific error messages based on the error type
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        setError('Unable to connect to the server. Please check if the backend is running.');
+      } else if (error instanceof Error && error.message.includes('404')) {
+        setError('Products endpoint not found. Please verify the API URL and endpoint path.');
+      } else {
+        setError('Failed to load products. Please check your connection and try again.');
+      }
+
+      // Set empty products array when there's an error
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  // Add this debugging log at the start
+  console.log('Current API URL:', API_URL);
+// Modify your error UI component for better user experience
+const ErrorDisplay = ({ error, onRetry }: { error: string; onRetry: () => void }) => (
+  <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+      <div className="text-center">
+        <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <X className="w-8 h-8 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Connection Error</h2>
+        <p className="text-gray-600 mb-6">{error}</p>
+        <div className="space-y-4">
+          <button
+            onClick={onRetry}
+            className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+          >
+            Try Again
+          </button>
+          <div className="text-sm text-gray-500">
+            <p>Debug Info:</p>
+            <code className="block mt-2 p-2 bg-gray-100 rounded">API URL: {API_URL}</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Update your error rendering in the main component
+if (error) {
+  return <ErrorDisplay error={error} onRetry={() => fetchProducts()} />;
 }
 
-return () => {
- window.removeEventListener('keydown', handleKeyDown);
-};
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.ctrlKey && e.altKey && e.shiftKey && e.key.toLowerCase() === 'a') {
+      setShowLoginModal(true);
+    }
+  };
+
+  window.addEventListener('keydown', handleKeyDown);
+  fetchProducts();
+  
+  const adminToken = localStorage.getItem('adminToken');
+  setIsAdmin(adminToken === ADMIN_CREDENTIALS.token);
+
+  return () => {
+    window.removeEventListener('keydown', handleKeyDown);
+  };
 }, []);
 
 const handleBuy = (product: Product) => {
@@ -518,11 +595,25 @@ setSelectedProduct(null);
 setShowCart(true);
 };
 
-const handleDelete = (productId: number) => {
-const updatedProducts = products.filter(p => p.id !== productId);
-localStorage.setItem('marketplaceProducts', JSON.stringify(updatedProducts));
-setProducts(updatedProducts);
-setShowDeleteModal(null);
+const handleDelete = async (productId: number) => {
+  try {
+    const response = await fetch(`${API_URL}/products/${productId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to delete product');
+    }
+
+    setProducts(prev => prev.filter(p => p.id !== productId));
+    setShowDeleteModal(null);
+  } catch (error) {
+    console.error('Error deleting product:', error);
+    alert('Failed to delete product. Please try again.');
+  }
 };
 
 const handleLogout = () => {
@@ -531,66 +622,87 @@ setIsAdmin(false);
 };
 
 const handleCheckout = async (e: React.FormEvent<HTMLFormElement>) => {
-e.preventDefault();
-setIsSubmitting(true);
+  e.preventDefault();
+  setIsSubmitting(true);
 
-try {
- const orderData = {
-   customerInfo: {
-     name: formData.name,
-     email: formData.email,
-     address: formData.address,
-     phone: formData.phone
-   },
-   orderDetails: {
-     items: cartItems.map(item => ({
-       productName: item.name,
-       price: item.price,
-       id: item.id
-     })),
-     totalAmount: cartItems.reduce((sum, item) => sum + item.price, 0)
-   },
-   orderDate: new Date(),
-   status: 'pending'
- };
+  try {
+    const orderData = {
+      customerInfo: {
+        name: formData.name,
+        email: formData.email,
+        address: formData.address,
+        phone: formData.phone
+      },
+      orderDetails: {
+        items: cartItems.map(item => ({
+          productName: item.name,
+          price: item.price,
+          id: item.id
+        })),
+        totalAmount: cartItems.reduce((sum, item) => sum + item.price, 0)
+      },
+      orderDate: new Date(),
+      status: 'pending'
+    };
 
- const response = await fetch(`${API_URL}/orders`, {
-   method: 'POST',
-   headers: {
-     'Content-Type': 'application/json',
-   },
-   body: JSON.stringify(orderData)
- });
+    const response = await fetch(`${API_URL}/orders`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(orderData)
+    });
 
- if (!response.ok) {
-   throw new Error('Failed to submit order');
- }
+    if (!response.ok) {
+      throw new Error('Failed to submit order');
+    }
 
- // Clear cart and form data
- setCartItems([]);
- setFormData({
-   name: '',
-   email: '',
-   address: '',
-   phone: ''
- });
- 
- // Show success message and hide cart
- setShowCart(false);
- setShowSuccess(true);
- 
- // Hide success message after 5 seconds
- setTimeout(() => {
-   setShowSuccess(false);
-   window.location.reload();
- }, 5000);
+    setCartItems([]);
+    setFormData({
+      name: '',
+      email: '',
+      address: '',
+      phone: ''
+    });
+    
+    setShowCart(false);
+    setShowSuccess(true);
+    
+    setTimeout(() => {
+      setShowSuccess(false);
+    }, 5000);
 
-} catch (error) {
- console.error('Error submitting order:', error);
- alert('Failed to place order. Please try again.');
-} finally {
- setIsSubmitting(false);
+  } catch (error) {
+    console.error('Error submitting order:', error);
+    alert('Failed to place order. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+if (loading) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-green-600"></div>
+    </div>
+  );
 }
+
+if (error) {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-red-600 mb-4">Error</h2>
+        <p className="text-gray-600">{error}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+  );
 };
 
 return (

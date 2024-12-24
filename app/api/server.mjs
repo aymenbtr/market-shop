@@ -1,84 +1,147 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
+import { MongoClient, ObjectId } from 'mongodb';
 
 const app = express();
+const port = 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:5000'],
+  credentials: true
+}));
+app.use(express.json({ limit: '50mb' })); // Increased limit for image uploads
 
-// MongoDB Connection with retry logic
-const connectWithRetry = () => {
-  mongoose.connect('mongodb://localhost:27017/user', {
-    useUnifiedTopology: true
-  })
-  .then(() => console.log('Connected to MongoDB'))
-  .catch(err => {
+const mongoUrl = 'mongodb://127.0.0.1:27017';
+const dbName = 'user';
+let db;
+
+async function connectDB() {
+  try {
+    const client = await MongoClient.connect(mongoUrl);
+    db = client.db(dbName);
+    console.log('Connected successfully to MongoDB');
+  } catch (err) {
     console.error('MongoDB connection error:', err);
-    console.log('Retrying in 5 seconds...');
-    setTimeout(connectWithRetry, 5000);
-  });
-};
+    process.exit(1);
+  }
+}
 
-connectWithRetry();
-
-// Order Schema
-const orderSchema = new mongoose.Schema({
-  customerInfo: {
-    name: String,
-    email: String,
-    address: String,
-    phone: String
-  },
-  orderDetails: {
-    items: [{
-      productName: String,
-      price: Number,
-      id: Number
-    }],
-    totalAmount: Number
-  },
-  orderDate: Date,
-  status: String,
-  createdAt: {
-    type: Date,
-    default: Date.now
+// Products endpoints
+app.get('/api/products', async (req, res) => {
+  try {
+    const collection = db.collection('clients');
+    const products = await collection.find({ type: 'product' }).toArray();
+    
+    // Transform _id to id for frontend compatibility
+    const transformedProducts = products.map(product => ({
+      ...product,
+      id: product._id.toString()
+    }));
+    
+    res.json({ products: transformedProducts });
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
 
-const Order = mongoose.model('Client', orderSchema);
+app.post('/api/products', async (req, res) => {
+  try {
+    const collection = db.collection('clients');
+    const { name, price, description, images } = req.body;
+    
+    // Validate required fields
+    if (!name || !price || !description) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
 
-// Routes
+    const newProduct = {
+      type: 'product',
+      name,
+      price: Number(price),
+      description,
+      images: images || [],
+      createdAt: new Date()
+    };
+
+    const result = await collection.insertOne(newProduct);
+    res.status(201).json({
+      ...newProduct,
+      id: result.insertedId.toString()
+    });
+  } catch (error) {
+    console.error('Error adding product:', error);
+    res.status(500).json({ error: 'Failed to add product' });
+  }
+});
+
+// Orders endpoints
 app.post('/api/orders', async (req, res) => {
   try {
-    const order = new Order(req.body);
-    await order.save();
-    res.status(201).json({ success: true, orderId: order._id });
+    const collection = db.collection('orders');
+    const { customerInfo, orderDetails } = req.body;
+    
+    // Validate required fields
+    if (!customerInfo || !orderDetails) {
+      return res.status(400).json({ error: 'Missing required order information' });
+    }
+
+    const newOrder = {
+      customerInfo,
+      orderDetails,
+      status: 'pending',
+      createdAt: new Date()
+    };
+
+    const result = await collection.insertOne(newOrder);
+    res.status(201).json({
+      ...newOrder,
+      id: result.insertedId.toString()
+    });
   } catch (error) {
-    console.error('Order creation error:', error);
-    res.status(500).json({ success: false, error: 'Failed to create order' });
+    console.error('Error creating order:', error);
+    res.status(500).json({ error: 'Failed to create order' });
   }
 });
 
-app.get('/api/orders', async (req, res) => {
+app.delete('/api/products/:id', async (req, res) => {
   try {
-    const orders = await Order.find().sort({ createdAt: -1 });
-    res.json({ success: true, orders });
+    const collection = db.collection('clients');
+    const result = await collection.deleteOne({
+      _id: new ObjectId(req.params.id)
+    });
+    
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    res.json({ message: 'Product deleted successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to fetch orders' });
+    console.error('Error deleting product:', error);
+    res.status(500).json({ error: 'Failed to delete product' });
   }
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-// Handle process termination gracefully
-process.on('SIGTERM', () => {
-  mongoose.connection.close(() => {
-    console.log('MongoDB connection closed');
-    process.exit(0);
+// Start server
+async function startServer() {
+  await connectDB();
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running at http://localhost:${port}`);
   });
+}
+
+startServer().catch(console.error);
+
+// Handle shutdown
+process.on('SIGINT', async () => {
+  try {
+    if (db) {
+      await db.client.close();
+      console.log('MongoDB connection closed');
+    }
+    process.exit(0);
+  } catch (err) {
+    console.error('Error during shutdown:', err);
+    process.exit(1);
+  }
 });
